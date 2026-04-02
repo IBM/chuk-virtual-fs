@@ -22,7 +22,6 @@ dependencies = [
     "pyyaml>=6.0.1",
     "asyncio>=3.4.3",
     "aioboto3>=15.1.0",
-    "pytest-cov>=6.0.0",
     "wsgidav>=4.3.3",
     "cheroot>=11.1.2",
     "pydantic>=2.0.0",

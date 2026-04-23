@@ -1224,7 +1224,7 @@ async def mcp_filesystem_tool():
 - `cp(source, destination)`: Copy a file or directory
 - `mv(source, destination)`: Move a file or directory
 - `find(path, recursive)`: Find files and directories
-- `search(path, pattern, recursive)`: Search for files matching a pattern
+- `search(path, pattern, recursive)`: Content search (raises `NotImplementedError` — not yet implemented; use `find()` for path-pattern matching)
 - `get_node_info(path)`: Get information about a node
 - `get_fs_info()`: Get comprehensive filesystem information
 
@@ -1391,13 +1391,15 @@ async def generate_and_validate_typescript(code: str):
 
 ## 💡 Requirements
 
-- Python 3.8+
-- Optional dependencies:
-  - `sqlite3` for SQLite provider
-  - `boto3` for S3 provider
-  - `e2b-code-interpreter` for E2B sandbox provider
-  - `wsgidav` and `cheroot` for WebDAV mounting
-  - `pyfuse3` for FUSE mounting
+- Python 3.11+
+- Core dependencies: `python-dotenv`, `pyyaml`, `pydantic`
+- Optional dependencies (installed via extras):
+  - `boto3`, `aioboto3` — S3 provider (`pip install "chuk-virtual-fs[s3]"`)
+  - `e2b-code-interpreter` — E2B sandbox provider (`pip install "chuk-virtual-fs[e2b]"`)
+  - `google-auth`, `google-api-python-client` — Google Drive (`pip install "chuk-virtual-fs[google_drive]"`)
+  - `GitPython` — Git provider (`pip install "chuk-virtual-fs[git]"`)
+  - `wsgidav`, `cheroot` — WebDAV mounting (`pip install "chuk-virtual-fs[webdav]"`)
+  - `pyfuse3` — FUSE mounting (`pip install "chuk-virtual-fs[mount]"`)
   - System FUSE (macFUSE on macOS, fuse3 on Linux) for FUSE mounting
 
 ## 🤝 Contributing

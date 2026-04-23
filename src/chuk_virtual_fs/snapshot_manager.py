@@ -4,11 +4,15 @@ chuk_virtual_fs/snapshot_manager.py - Async snapshot and restore functionality f
 
 from __future__ import annotations
 
+import base64
 import datetime
 import json
+import logging
 import os
 import time
 from typing import TYPE_CHECKING, Any
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from chuk_virtual_fs.fs_manager import VirtualFileSystem
@@ -166,7 +170,7 @@ class AsyncSnapshotManager:
 
             return True
         except Exception as e:
-            print(f"Error exporting snapshot: {e}")
+            logger.error("Error exporting snapshot: %s", e)
             return False
 
     def import_snapshot(
@@ -189,7 +193,7 @@ class AsyncSnapshotManager:
 
             # Extract snapshot and metadata
             if not isinstance(import_data, dict) or "snapshot" not in import_data:
-                print("Invalid snapshot file format")
+                logger.error("Invalid snapshot file format")
                 return None
 
             snapshot_data = import_data["snapshot"]
@@ -219,7 +223,7 @@ class AsyncSnapshotManager:
 
             return name
         except Exception as e:
-            print(f"Error importing snapshot: {e}")
+            logger.error("Error importing snapshot: %s", e)
             return None
 
     async def _serialize_filesystem(self) -> dict[str, Any]:
@@ -254,13 +258,17 @@ class AsyncSnapshotManager:
                     "parent": node_info.parent_path,
                 }
             else:
-                # Read file content
-                content_bytes = await self.fs.read_file(path)
-                content = content_bytes if content_bytes is not None else b""
+                # Read file content and base64-encode for JSON serialization
+                content_raw = await self.fs.read_file(path)
+                if isinstance(content_raw, str):
+                    content_bytes: bytes = content_raw.encode()
+                else:
+                    content_bytes = content_raw if content_raw is not None else b""
+                content_b64 = base64.b64encode(content_bytes).decode("ascii")
                 fs_data["files"][path] = {
                     "name": node_info.name,
                     "parent": node_info.parent_path,
-                    "content": content,
+                    "content": content_b64,
                 }
 
         return fs_data
@@ -316,20 +324,20 @@ class AsyncSnapshotManager:
                     if node_info:
                         if not node_info.is_dir:
                             # Remove file
-                            print(f"Removing file not in snapshot: {path}")
+                            logger.debug("Removing file not in snapshot: %s", path)
                             await self.fs.rm(path)
                         else:
                             # For directories, only remove if empty
                             try:
                                 contents = await self.fs.ls(path)
                                 if not contents:
-                                    print(f"Removing empty directory: {path}")
+                                    logger.debug("Removing empty directory: %s", path)
                                     await self.fs.rmdir(path)
                             except Exception:
                                 # If ls fails, try to remove anyway
                                 await self.fs.rm(path)
                 except Exception as e:
-                    print(f"Error removing path {path}: {e}")
+                    logger.warning("Error removing path %s: %s", path, e)
 
             # First create all directories
             for path, dir_info in sorted(fs_data.get("directories", {}).items()):
@@ -354,13 +362,14 @@ class AsyncSnapshotManager:
                     # Create parent directory first
                     await self._ensure_directory(parent_path)
 
-                # Write file content (overwriting if it exists)
-                content = file_info.get("content", "")
+                # Decode base64 content and write the file
+                raw = file_info.get("content", "")
+                content = base64.b64decode(raw) if raw else b""
                 await self.fs.write_file(path, content)
 
             return True
         except Exception as e:
-            print(f"Error restoring filesystem: {e}")
+            logger.error("Error restoring filesystem: %s", e)
             return False
 
     async def _ensure_directory(self, path: str) -> bool:
@@ -399,11 +408,11 @@ class AsyncSnapshotManager:
                 # Create directory
                 success = await self.fs.mkdir(current_path)
                 if not success:
-                    print(f"Failed to create directory: {current_path}")
+                    logger.error("Failed to create directory: %s", current_path)
                     return False
             elif not info.is_dir:
                 # Path exists but is not a directory
-                print(f"Path exists but is not a directory: {current_path}")
+                logger.error("Path exists but is not a directory: %s", current_path)
                 return False
 
         return True

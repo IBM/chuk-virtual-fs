@@ -202,10 +202,9 @@ class TestSyncVirtualFileSystem:
         assert isinstance(results, list)
 
     def test_search(self, sync_fs):
-        """Test searching for pattern in files"""
-        # Note: search method returns empty list as it's not implemented
-        results = sync_fs.search("pattern")
-        assert results == []
+        """Test that search raises NotImplementedError (not yet implemented)"""
+        with pytest.raises(NotImplementedError):
+            sync_fs.search("pattern")
 
     def test_get_size(self, sync_fs):
         """Test getting file size"""

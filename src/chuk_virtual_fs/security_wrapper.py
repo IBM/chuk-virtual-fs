@@ -11,13 +11,7 @@ from typing import Any
 from chuk_virtual_fs.node_info import EnhancedNodeInfo
 from chuk_virtual_fs.provider_base import AsyncStorageProvider
 
-# Configure module-level logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)  # Adjust level as needed
-handler = logging.StreamHandler()
-formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
 class SecurityWrapper(AsyncStorageProvider):

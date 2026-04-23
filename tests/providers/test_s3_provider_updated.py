@@ -470,15 +470,14 @@ class TestS3StorageProviderNew:
 
     @pytest.mark.asyncio
     async def test_read_file_not_found(self, initialized_provider):
-        """Test reading a non-existent file"""
+        """Test reading a non-existent file returns None (interface contract)"""
         provider = initialized_provider
         mock_client = provider._test_mock_client
 
-        # S3 provider raises FileNotFoundError on exception
         mock_client.get_object = AsyncMock(side_effect=Exception("NoSuchKey"))
 
-        with pytest.raises(FileNotFoundError):
-            await provider.read_file("/nonexistent.txt")
+        result = await provider.read_file("/nonexistent.txt")
+        assert result is None
 
     @pytest.mark.asyncio
     async def test_exists_file_error(self, initialized_provider):

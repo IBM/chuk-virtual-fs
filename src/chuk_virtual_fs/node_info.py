@@ -4,7 +4,7 @@ chuk_virtual_fs/enhanced_node_info.py - Enhanced node information with metadata
 
 import hashlib
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -26,10 +26,8 @@ class EnhancedNodeInfo:
     md5: str | None = None
 
     # Timestamps
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
-    modified_at: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat() + "Z"
-    )
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    modified_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     accessed_at: str | None = None
 
     # TTL and expiration
@@ -66,24 +64,24 @@ class EnhancedNodeInfo:
 
     def update_modified(self) -> None:
         """Update the modified timestamp"""
-        self.modified_at = datetime.utcnow().isoformat() + "Z"
+        self.modified_at = datetime.now(UTC).isoformat()
 
     def update_accessed(self) -> None:
         """Update the accessed timestamp"""
-        self.accessed_at = datetime.utcnow().isoformat() + "Z"
+        self.accessed_at = datetime.now(UTC).isoformat()
 
     def calculate_expiry(self) -> None:
         """Calculate expiry time based on TTL"""
         if self.ttl:
-            expiry = datetime.utcnow().timestamp() + self.ttl
-            self.expires_at = datetime.fromtimestamp(expiry).isoformat() + "Z"
+            expiry = datetime.now(UTC).timestamp() + self.ttl
+            self.expires_at = datetime.fromtimestamp(expiry, tz=UTC).isoformat()
 
     def is_expired(self) -> bool:
         """Check if the node has expired"""
         if not self.expires_at:
             return False
         expiry = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
-        return datetime.utcnow() > expiry.replace(tzinfo=None)
+        return datetime.now(UTC) > expiry
 
     def calculate_checksums(self, content: bytes) -> None:
         """Calculate checksums for the content"""

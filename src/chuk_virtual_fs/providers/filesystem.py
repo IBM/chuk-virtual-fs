@@ -9,12 +9,16 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import logging
 import os
 import posixpath
 import shutil
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from chuk_virtual_fs.node_info import EnhancedNodeInfo
 from chuk_virtual_fs.provider_base import AsyncStorageProvider
@@ -50,17 +54,17 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
                 self.root_path.mkdir(parents=True, exist_ok=True)
 
             if not self.root_path.exists():
-                print(f"Error: Root path {self.root_path} does not exist")
+                logger.error("Root path %s does not exist", self.root_path)
                 return False
 
             if not self.root_path.is_dir():
-                print(f"Error: Root path {self.root_path} is not a directory")
+                logger.error("Root path %s is not a directory", self.root_path)
                 return False
 
             self._initialized = True
             return True
         except Exception as e:
-            print(f"Error initializing filesystem storage: {e}")
+            logger.error("Error initializing filesystem storage: %s", e)
             return False
 
     async def close(self) -> None:
@@ -117,7 +121,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error creating node: {e}")
+            logger.error("Error creating node: %s", e)
             return False
 
     def _set_filesystem_metadata(
@@ -196,7 +200,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error deleting node: {e}")
+            logger.error("Error deleting node: %s", e)
             return False
 
     async def get_node_info(self, path: str) -> EnhancedNodeInfo | None:
@@ -254,7 +258,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return node_info
 
         except Exception as e:
-            print(f"Error getting node info: {e}")
+            logger.error("Error getting node info: %s", e)
             return None
 
     async def list_directory(self, path: str) -> list[str]:
@@ -282,7 +286,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return sorted(items)
 
         except Exception as e:
-            print(f"Error listing directory: {e}")
+            logger.error("Error listing directory: %s", e)
             return []
 
     async def write_file(self, path: str, content: bytes) -> bool:
@@ -311,7 +315,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error writing file: {e}")
+            logger.error("Error writing file: %s", e)
             return False
 
     async def read_file(self, path: str) -> bytes | None:
@@ -333,7 +337,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
                 return f.read()
 
         except Exception as e:
-            print(f"Error reading file: {e}")
+            logger.error("Error reading file: %s", e)
             return None
 
     async def exists(self, path: str) -> bool:
@@ -349,7 +353,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             fs_path = self._resolve_path(path)
             return fs_path.exists()
         except Exception as e:
-            print(f"Error checking existence: {e}")
+            logger.error("Error checking existence: %s", e)
             return False
 
     async def get_metadata(self, path: str) -> dict[str, Any]:
@@ -418,7 +422,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error setting metadata: {e}")
+            logger.error("Error setting metadata: %s", e)
             return False
 
     async def get_storage_stats(self) -> dict[str, Any]:
@@ -464,7 +468,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             }
 
         except Exception as e:
-            print(f"Error getting storage stats: {e}")
+            logger.error("Error getting storage stats: %s", e)
             return {"error": str(e)}
 
     async def cleanup(self) -> dict[str, Any]:
@@ -499,12 +503,10 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
                     # Check if file is expired
                     if metadata.get("expires_at"):
                         try:
-                            from datetime import datetime
-
                             expires_at = datetime.fromisoformat(
                                 metadata["expires_at"].replace("Z", "+00:00")
                             )
-                            if datetime.utcnow() > expires_at.replace(tzinfo=None):
+                            if datetime.now(UTC) > expires_at:
                                 size = file_path.stat().st_size
                                 file_path.unlink()
 
@@ -529,7 +531,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             }
 
         except Exception as e:
-            print(f"Error during cleanup: {e}")
+            logger.error("Error during cleanup: %s", e)
             return {
                 "files_removed": files_removed,
                 "bytes_freed": bytes_freed,
@@ -566,7 +568,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error creating directory: {e}")
+            logger.error("Error creating directory: %s", e)
             return False
 
     async def calculate_checksum(self, content: bytes) -> str:
@@ -609,7 +611,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return hash_obj.hexdigest()
 
         except Exception as e:
-            print(f"Error calculating checksum: {e}")
+            logger.error("Error calculating checksum: %s", e)
             return None
 
     async def copy_node(self, src_path: str, dst_path: str) -> bool:
@@ -650,7 +652,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error copying node: {e}")
+            logger.error("Error copying node: %s", e)
             return False
 
     async def move_node(self, src_path: str, dst_path: str) -> bool:
@@ -689,7 +691,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error moving node: {e}")
+            logger.error("Error moving node: %s", e)
             return False
 
     # Batch operations for performance
@@ -721,7 +723,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
 
                 results.append(True)
             except Exception as e:
-                print(f"Error in batch write for {path}: {e}")
+                logger.error("Error in batch write for %s: %s", path, e)
                 results.append(False)
 
         return results
@@ -746,7 +748,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
                 else:
                     results.append(None)
             except Exception as e:
-                print(f"Error in batch read for {path}: {e}")
+                logger.error("Error in batch read for %s: %s", path, e)
                 results.append(None)
 
         return results
@@ -785,7 +787,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
 
                 results.append(True)
             except Exception as e:
-                print(f"Error in batch delete for {path}: {e}")
+                logger.error("Error in batch delete for %s: %s", path, e)
                 results.append(False)
 
         return results
@@ -822,7 +824,9 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
                 results.append(True)
 
             except Exception as e:
-                print(f"Error in batch create for {node_info.get_path()}: {e}")
+                logger.error(
+                    "Error in batch create for %s: %s", node_info.get_path(), e
+                )
                 results.append(False)
 
         return results
@@ -884,7 +888,7 @@ class AsyncFilesystemStorageProvider(AsyncStorageProvider):
             return True
 
         except Exception as e:
-            print(f"Error in atomic stream write: {e}")
+            logger.error("Error in atomic stream write: %s", e)
 
             # Cleanup temp file on error
             if temp_path and temp_path.exists():

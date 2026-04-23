@@ -10,7 +10,7 @@ import logging
 import posixpath
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from chuk_virtual_fs.node_info import EnhancedNodeInfo
@@ -351,7 +351,7 @@ class S3StorageProvider(AsyncStorageProvider):
                         owner=metadata.get("owner", "1000"),
                         group=metadata.get("group", "1000"),
                         modified_at=(
-                            response.get("LastModified", datetime.utcnow()).isoformat()
+                            response.get("LastModified", datetime.now(UTC)).isoformat()
                             if hasattr(response.get("LastModified"), "isoformat")
                             else str(response.get("LastModified"))
                         ),
@@ -378,7 +378,7 @@ class S3StorageProvider(AsyncStorageProvider):
                     permissions="755",
                     owner="1000",
                     group="1000",
-                    modified_at=datetime.utcnow().isoformat(),
+                    modified_at=datetime.now(UTC).isoformat(),
                     mime_type="application/x-directory",
                 )
 
@@ -467,7 +467,7 @@ class S3StorageProvider(AsyncStorageProvider):
             logger.error(f"Error listing directory: {e}")
             return []
 
-    async def read_file(self, path: str) -> bytes:
+    async def read_file(self, path: str) -> bytes | None:
         """Read file content"""
         try:
             s3_key = self._get_s3_key(path)
@@ -480,7 +480,7 @@ class S3StorageProvider(AsyncStorageProvider):
 
         except Exception as e:
             logger.error(f"Error reading file {path}: {e}")
-            raise FileNotFoundError(f"File not found: {path}")  # noqa: B904
+            return None
 
     async def write_file(
         self,
@@ -518,7 +518,7 @@ class S3StorageProvider(AsyncStorageProvider):
                         "permissions": oct(mode)[2:],
                         "owner": str(owner_id),
                         "group": str(group_id),
-                        "modified": datetime.utcnow().isoformat(),
+                        "modified": datetime.now(UTC).isoformat(),
                     },
                 )
 
@@ -744,8 +744,6 @@ class S3StorageProvider(AsyncStorageProvider):
 
     async def batch_write(self, operations: list[tuple[str, bytes]]) -> list[bool]:
         """Write multiple files in parallel"""
-        import asyncio
-
         tasks = []
         for path, content in operations:
             tasks.append(self.write_file(path, content))
@@ -757,8 +755,6 @@ class S3StorageProvider(AsyncStorageProvider):
 
     async def batch_read(self, paths: list[str]) -> list[bytes | None]:
         """Read multiple files in parallel"""
-        import asyncio
-
         tasks = []
         for path in paths:
             tasks.append(self.read_file(path))
@@ -770,8 +766,6 @@ class S3StorageProvider(AsyncStorageProvider):
 
     async def batch_delete(self, paths: list[str]) -> list[bool]:
         """Delete multiple nodes in parallel"""
-        import asyncio
-
         tasks = []
         for path in paths:
             tasks.append(self.delete_node(path))
@@ -783,8 +777,6 @@ class S3StorageProvider(AsyncStorageProvider):
 
     async def batch_create(self, nodes: list[EnhancedNodeInfo]) -> list[bool]:
         """Create multiple nodes in parallel"""
-        import asyncio
-
         tasks = []
         for node in nodes:
             tasks.append(self.create_node(node))
@@ -960,7 +952,7 @@ class S3StorageProvider(AsyncStorageProvider):
                     ContentType=content_type,
                     Metadata={
                         "type": "file",
-                        "modified": datetime.utcnow().isoformat(),
+                        "modified": datetime.now(UTC).isoformat(),
                     },
                 )
 

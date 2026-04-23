@@ -9,6 +9,7 @@ import posixpath
 from typing import Any
 
 from chuk_virtual_fs.provider_base import AsyncStorageProvider
+from chuk_virtual_fs.providers import get_provider
 
 logger = logging.getLogger(__name__)
 
@@ -235,34 +236,12 @@ class MountManager:
     async def _create_provider(
         self, provider_name: str, kwargs: dict[str, Any]
     ) -> AsyncStorageProvider | None:
-        """Create a provider instance"""
+        """Create a provider instance via the provider registry"""
         try:
-            if provider_name == "memory":
-                from chuk_virtual_fs.providers.memory import AsyncMemoryStorageProvider
-
-                return AsyncMemoryStorageProvider(**kwargs)
-
-            elif provider_name == "s3":
-                from chuk_virtual_fs.providers.s3 import S3StorageProvider
-
-                return S3StorageProvider(**kwargs)
-
-            elif provider_name == "filesystem":
-                from chuk_virtual_fs.providers.filesystem import (
-                    AsyncFilesystemStorageProvider,
-                )
-
-                return AsyncFilesystemStorageProvider(**kwargs)
-
-            elif provider_name == "sqlite":
-                from chuk_virtual_fs.providers.sqlite import SqliteStorageProvider
-
-                return SqliteStorageProvider(**kwargs)
-
-            else:
+            instance = get_provider(provider_name, **kwargs)
+            if instance is None:
                 logger.error(f"Unknown provider: {provider_name}")
-                return None
-
+            return instance
         except ImportError as e:
             logger.error(f"Failed to import provider {provider_name}: {e}")
             return None

@@ -143,35 +143,30 @@ class TestMountManagerProviderCreation:
 
     @pytest.mark.asyncio
     async def test_create_s3_provider(self):
-        """Test S3 provider creation"""
+        """Test S3 provider creation via registry"""
         manager = MountManager()
 
-        # S3 provider needs specific kwargs
-        # This tests the S3 branch in _create_provider
-        # We expect this to fail without proper credentials but should create provider
-        with patch("chuk_virtual_fs.providers.s3.S3StorageProvider") as MockS3:
-            mock_instance = AsyncMock()
-            mock_instance.initialize = AsyncMock(
-                side_effect=Exception("No credentials")
-            )
-            MockS3.return_value = mock_instance
+        mock_instance = AsyncMock()
+        mock_instance.initialize = AsyncMock(side_effect=Exception("No credentials"))
 
+        with patch(
+            "chuk_virtual_fs.mount_manager.get_provider", return_value=mock_instance
+        ) as mock_get:
             result = await manager.mount(
                 "/s3", provider="s3", provider_kwargs={"bucket_name": "test"}
             )
 
             # Should fail at initialization, not creation
             assert result is False
-            MockS3.assert_called_once()
+            mock_get.assert_called_once_with("s3", bucket_name="test")
 
     @pytest.mark.asyncio
     async def test_create_provider_import_error(self):
         """Test handling of ImportError during provider creation"""
         manager = MountManager()
 
-        # Simulate ImportError when importing provider module
         with patch(
-            "chuk_virtual_fs.providers.memory.AsyncMemoryStorageProvider",
+            "chuk_virtual_fs.mount_manager.get_provider",
             side_effect=ImportError("Module not found"),
         ):
             result = await manager.mount(
@@ -184,9 +179,8 @@ class TestMountManagerProviderCreation:
         """Test handling of general exception during provider creation"""
         manager = MountManager()
 
-        # Simulate exception when creating provider instance
         with patch(
-            "chuk_virtual_fs.providers.memory.AsyncMemoryStorageProvider",
+            "chuk_virtual_fs.mount_manager.get_provider",
             side_effect=RuntimeError("Creation error"),
         ):
             result = await manager.mount(

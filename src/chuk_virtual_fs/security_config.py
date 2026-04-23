@@ -25,7 +25,7 @@ SECURITY_PROFILES = {
         "read_only": False,
         "allowed_paths": ["/home", "/tmp"],  # nosec B108 - Virtual FS paths, not system dirs
         "denied_paths": ["/etc", "/bin", "/sbin", "/usr", "/var", "/root"],
-        "denied_patterns": [r"\.\.", r"\.", r"\..*", r".*\.exe", r".*\.sh"],
+        "denied_patterns": [r"\.\.", r"^\.", r".*\.exe", r".*\.sh"],
         "max_path_depth": 5,
         "max_files": 100,
     },

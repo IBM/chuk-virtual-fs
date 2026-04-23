@@ -1,6 +1,6 @@
 [project]
 name = "chuk-virtual-fs"
-version = "0.5.1"
+version = "0.5.2"
 description = "A secure, modular virtual filesystem designed for AI agent sandboxes"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -20,17 +20,13 @@ classifiers = [
 dependencies = [
     "python-dotenv>=1.1.0",
     "pyyaml>=6.0.1",
-    "asyncio>=3.4.3",
-    "aioboto3>=15.1.0",
-    "wsgidav>=4.3.3",
-    "cheroot>=11.1.2",
     "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
 s3 = [
     "boto3>=1.28.0",
-    "aioboto3>=12.0.0",
+    "aioboto3>=15.1.0",
 ]
 e2b = [
     "e2b-code-interpreter>=1.2.0",
@@ -58,8 +54,8 @@ mount = [
     "winfspy>=0.6.0; sys_platform == 'win32'",
 ]
 webdav = [
-    "wsgidav>=4.3.0",
-    "cheroot>=11.1.0",
+    "wsgidav>=4.3.3",
+    "cheroot>=11.1.2",
 ]
 all = [
     "boto3>=1.28.0",

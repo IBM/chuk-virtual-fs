@@ -193,10 +193,7 @@ class SyncVirtualFileSystem:
         self, pattern: str, path: str | None = None
     ) -> list[tuple[str, int, str]]:
         """Search for pattern in files"""
-        self._ensure_initialized()
-        # Note: AsyncVirtualFileSystem doesn't have a search method
-        # This is a placeholder for future implementation
-        return []
+        raise NotImplementedError("Content search is not yet implemented")
 
     def get_size(self, path: str) -> int:
         """Get file size"""
